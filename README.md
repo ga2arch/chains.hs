@@ -21,14 +21,18 @@ show
 
 cabal run add Study
 
+```
 Study
 1
 ---
-
+```
 
 cabal run done Study
 
+```
 Study
 1
 ---
  V
+ ```
+
