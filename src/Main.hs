@@ -28,6 +28,7 @@ process :: [String] -> StateT Chains IO ()
 process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
                    |  cmd == "show" = showChains
                    |  cmd == "done" = doneChain args >> showChains
+                   |  cmd == "rm"   = rmChain args   >> showChains
 
 editChains = undefined
 loadChains = fmap maybeRead $ readFile "chains"
@@ -43,10 +44,11 @@ showChains = do
     chains <- fmap M.elems get
     let r = transpose $ map showChain $ zip (iterate (+1) 0) chains
     liftIO $ print r
-    mapM_ (\x -> liftIO $ putStrLn $ concat x) r
+    mapM_ (liftIO . putStrLn . concat) r
 
 showChain :: (Int, Chain) -> [String]
-showChain (i, Chain{..}) = [chainName++tab, show chainStart ++ tab,"---\t",progress]
+showChain (i, Chain{..}) = 
+    [chainName++tab, show chainStart ++ tab,"---\t",progress]
   where
     tab = "\t"
     tabs = take i $ repeat '\t'
@@ -62,6 +64,11 @@ doneChain (name:_) = do
     let (Chain n s e r p) = chains M.! name
     let nchain = Chain n s e r $ p ++ [True]
     put $ M.insert name nchain chains
+
+rmChain :: [String] -> StateT Chains IO ()
+rmChain (name:_) = do
+    chains <- get
+    put $ M.delete name chains 
 
 main :: IO ()
 main = do
