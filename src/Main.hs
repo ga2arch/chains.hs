@@ -25,9 +25,9 @@ data Chain = Chain {
 maybeRead = fmap fst . listToMaybe . reads
 
 process :: [String] -> StateT Chains IO ()
-process (cmd:args) |  cmd == "add"  = addChain args
+process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
                    |  cmd == "show" = showChains
-                   |  cmd == "done" = doneChain args
+                   |  cmd == "done" = doneChain args >> showChains
 
 editChains = undefined
 loadChains = fmap maybeRead $ readFile "chains"
@@ -41,15 +41,20 @@ addChain (name:_) = do
 showChains :: StateT Chains IO ()
 showChains = do
     chains <- fmap M.elems get
-    let r = transpose $ map showChain chains
-    mapM_ (\x -> liftIO $ putStrLn $ concat $ intersperse "\t" x) r
+    let r = transpose $ map showChain $ zip (iterate (+1) 0) chains
+    liftIO $ print r
+    mapM_ (\x -> liftIO $ putStrLn $ concat x) r
 
-showChain :: Chain -> [String]
-showChain Chain{..} = [chainName,show chainStart,"---",progress]
+showChain :: (Int, Chain) -> [String]
+showChain (i, Chain{..}) = [chainName++tab, show chainStart ++ tab,"---\t",progress]
   where
+    tab = "\t"
+    tabs = take i $ repeat '\t'
     progress = concat $ 
                intersperse "\n" $ 
-               map (\x -> if x then "V" else "X") chainProgress
+               map (\x -> if x 
+                            then tabs ++ " V" 
+                            else tabs ++ " X") chainProgress
 
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
