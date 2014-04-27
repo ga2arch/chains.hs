@@ -10,12 +10,14 @@ cabal install --only-dependencies
 
 # Run 
 
-cabal run (add|rm|done|show)
+cabal run (add | rm | done | show)
 
+```
 add  <name>
 rm   <name>
 done <name>
 show 
+```
 
 # Example
 
