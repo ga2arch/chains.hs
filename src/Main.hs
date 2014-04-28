@@ -7,6 +7,8 @@ import Prelude hiding (readFile)
 import Control.Monad.State
 import Data.Maybe
 import Data.List (intersperse, transpose)
+import Data.Time
+import System.Directory
 import System.Environment
 import System.IO.Strict
 
@@ -16,7 +18,7 @@ type Chains = M.Map String Chain
 
 data Chain = Chain {
     chainName  :: String
-,   chainStart :: Int
+,   chainStart :: UTCTime
 ,   chainEnd   :: Int
 ,   chainRunning :: Bool
 ,   chainProgress :: [Bool]
@@ -31,12 +33,19 @@ process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
                    |  cmd == "rm"   = rmChain args   >> showChains
 
 editChains = undefined
-loadChains = fmap maybeRead $ readFile "chains"
 
+loadChains :: IO (Maybe Chains)
+loadChains = do 
+    exists <- doesFileExist "chains"
+    if exists
+        then fmap maybeRead $ readFile "chains"
+        else writeFile "chains" "" >> loadChains
+        
 addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
     chains <- get
-    let chain = Chain name 1 0 True []
+    time <- liftIO $ getCurrentTime
+    let chain = Chain name time 0 True []
     put $ M.insert name chain chains
 
 showChains :: StateT Chains IO ()
