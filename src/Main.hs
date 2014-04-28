@@ -24,7 +24,6 @@ data Chain = Chain {
 ,   chainProgress :: [Bool]
 } deriving (Show, Read)
 
-maybeRead = fmap fst . listToMaybe . reads
 
 process :: [String] -> StateT Chains IO ()
 process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
@@ -32,15 +31,6 @@ process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
                    |  cmd == "done" = doneChain args >> showChains
                    |  cmd == "rm"   = rmChain args   >> showChains
 
-editChains = undefined
-
-loadChains :: IO (Maybe Chains)
-loadChains = do 
-    exists <- doesFileExist "chains"
-    if exists
-        then fmap maybeRead $ readFile "chains"
-        else writeFile "chains" "" >> loadChains
-        
 addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
     chains <- get
@@ -78,6 +68,15 @@ rmChain :: [String] -> StateT Chains IO ()
 rmChain (name:_) = do
     chains <- get
     put $ M.delete name chains 
+
+loadChains :: IO (Maybe Chains)
+loadChains = do 
+    exists <- doesFileExist "chains"
+    if exists
+        then fmap maybeRead $ readFile "chains"
+        else writeFile "chains" "" >> loadChains
+  where
+    maybeRead = fmap fst . listToMaybe . reads
 
 main :: IO ()
 main = do
