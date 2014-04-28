@@ -4,6 +4,7 @@ module Main where
 
 import Prelude hiding (readFile)
 
+import Control.Applicative
 import Control.Monad.State
 import Data.Maybe
 import Data.List (intersperse, transpose)
@@ -18,8 +19,8 @@ type Chains = M.Map String Chain
 
 data Chain = Chain {
     chainName  :: String
-,   chainStart :: UTCTime
-,   chainEnd   :: Int
+,   chainStart :: LocalTime
+,   chainEnd   :: Maybe LocalTime
 ,   chainRunning :: Bool
 ,   chainProgress :: [Bool]
 } deriving (Show, Read)
@@ -34,8 +35,9 @@ process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
 addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
     chains <- get
-    time <- liftIO $ getCurrentTime
-    let chain = Chain name time 0 True []
+    time <- liftIO $ utcToLocalTime <$> getCurrentTimeZone 
+                                    <*> getCurrentTime
+    let chain = Chain name time Nothing True []
     put $ M.insert name chain chains
 
 showChains :: StateT Chains IO ()
@@ -47,7 +49,7 @@ showChains = do
 
 showChain :: (Int, Chain) -> [String]
 showChain (i, Chain{..}) = 
-    [chainName++tab, show chainStart ++ tab,"---\t",progress]
+    [chainName ++ tab, show chainStart ++ tab, "---\t", progress]
   where
     tab = "\t"
     tabs = take i $ repeat '\t'
