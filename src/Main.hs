@@ -10,6 +10,7 @@ import Data.Maybe
 import Data.List (intersperse, transpose)
 import Data.Time
 import System.Directory
+import System.Locale
 import System.Environment
 import System.IO.Strict
 
@@ -49,10 +50,11 @@ showChains = do
 
 showChain :: (Int, Chain) -> [String]
 showChain (i, Chain{..}) = 
-    [chainName ++ tab, show chainStart ++ tab, "---\t", progress]
+    [chainName ++ tab, start ++ tab, "---\t", progress]
   where
     tab = "\t"
     tabs = take i $ repeat '\t'
+    start = formatTime defaultTimeLocale "%F" chainStart
     progress = concat $ 
                intersperse "\n" $ 
                map (\x -> if x 
