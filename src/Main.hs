@@ -45,7 +45,7 @@ showChains :: StateT Chains IO ()
 showChains = do
     chains <- fmap M.elems get
     let r = transpose $ map showChain $ zip (iterate (+1) 0) chains
-    liftIO $ print r
+    --liftIO $ print r
     mapM_ (liftIO . putStrLn . concat) r
 
 showChain :: (Int, Chain) -> [String]
@@ -82,11 +82,21 @@ loadChains = do
   where
     maybeRead = fmap fst . listToMaybe . reads
 
+updateChains :: Chains -> IO Chains
+updateChains chains = do 
+    today <- utcToLocalTime <$> getCurrentTimeZone <*> getCurrentTime
+    return $ M.map (go today) chains
+  where 
+    go today c@Chain{..} = do
+        let days = diffDays (localDay today) (localDay chainStart)
+        let p = chainProgress ++ (take ((fromIntegral days) - length chainProgress) $ repeat False)
+        (c { chainProgress = p}) 
+
 main :: IO ()
 main = do
     args <- getArgs 
     chains  <- loadChains >>= \case
-        Just chains -> execStateT (process args) chains 
+        Just chains -> updateChains chains >>= execStateT (process args) 
         Nothing     -> execStateT (process args) M.empty
     writeFile "chains" $ show chains
 
