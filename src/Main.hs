@@ -44,23 +44,21 @@ addChain (name:_) = do
 showChains :: StateT Chains IO ()
 showChains = do
     chains <- fmap M.elems get
-    let r = transpose $ map showChain $ zip (iterate (+1) 0) chains
-    liftIO $ print r
-    mapM_ (liftIO . putStrLn . concat) r
+    let r = map showChain $ zip (iterate (+1) 0) chains
+    --liftIO $ print r
+    mapM_ (liftIO . putStrLn) r
 
-showChain :: (Int, Chain) -> [String]
+showChain :: (Int, Chain) -> String
 showChain (i, Chain{..}) = 
-    [chainName ++ tab, show streak ++ tab, "---\t", progress]
+    (concat $ intersperse "\n" temp) ++ "\n"
   where
-    tab = "\t"
-    tabs = take i $ repeat '\t'
+    separator = "---" --take (length chainName) $ repeat '-'
     start = formatTime defaultTimeLocale "%F" chainStart
     streak = length $ takeWhile (== True) $ reverse chainProgress
-    progress = concat $ 
-               intersperse "\n" $ 
-               map (\x -> if x 
-                            then tabs ++ " V" 
-                            else tabs ++ " X") chainProgress
+    spaces = " " --take (length separator `div` 2) $ repeat ' '
+    progress = map (\case True -> spaces ++ "V" 
+                          False -> spaces ++ "X") chainProgress
+    temp = [chainName, show streak, separator] ++ progress
 
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
@@ -98,6 +96,7 @@ updateChains chains = do
 main :: IO ()
 main = do
     args <- getArgs 
+    putStrLn "Chains\n==="
     chains  <- loadChains >>= \case
         Just chains -> updateChains chains >>= execStateT (process args) 
         Nothing     -> execStateT (process args) M.empty
