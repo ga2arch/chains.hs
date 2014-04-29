@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, LambdaCase #-}
+{-# LANGUAGE RecordWildCards, LambdaCase, TemplateHaskell #-}
 
 module Main where 
 
@@ -28,28 +28,29 @@ data Chain = Chain {
 } deriving (Show, Read)
 
 process :: [String] -> StateT Chains IO ()
+process [] = showChains
 process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
                    |  cmd == "show" = showChains
                    |  cmd == "done" = doneChain args >> showChains
                    |  cmd == "rm"   = rmChain args   >> showChains
 
+
 addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
-    chains <- get
     time <- liftIO $ utcToLocalTime <$> getCurrentTimeZone 
                                     <*> getCurrentTime
-    let chain = Chain name time Nothing True []
-    put $ M.insert name chain chains
+    modify $ \chains -> do 
+        let chain = Chain name time Nothing True []
+        M.insert name chain chains
 
 showChains :: StateT Chains IO ()
 showChains = do
     chains <- fmap M.elems get
-    let r = map showChain $ zip (iterate (+1) 0) chains
     --liftIO $ print r
-    mapM_ (liftIO . putStrLn) r
+    mapM_ (liftIO . putStrLn . showChain) chains
 
-showChain :: (Int, Chain) -> String
-showChain (i, Chain{..}) = 
+showChain :: Chain -> String
+showChain Chain{..} = 
     (concat $ intersperse "\n" temp) ++ "\n"
   where
     separator = "---" --take (length chainName) $ repeat '-'
@@ -62,15 +63,13 @@ showChain (i, Chain{..}) =
 
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
-    chains <- get
-    let (Chain n s e r p) = chains M.! name
-    let nchain = Chain n s e r $ p ++ [True]
-    put $ M.insert name nchain chains
+    modify $ \chains -> do
+        let c@Chain{..} = chains M.! name
+        M.insert name (c { chainProgress = chainProgress ++ [True]}) chains
 
 rmChain :: [String] -> StateT Chains IO ()
 rmChain (name:_) = do
-    chains <- get
-    put $ M.delete name chains 
+    modify $ \chains -> M.delete name chains 
 
 loadChains :: IO (Maybe Chains)
 loadChains = do 
@@ -83,15 +82,16 @@ loadChains = do
 
 updateChains :: Chains -> IO Chains
 updateChains chains = do 
-    today <- utcToLocalTime <$> getCurrentTimeZone <*> getCurrentTime
+    today <- utcToLocalTime <$> getCurrentTimeZone 
+                            <*> getCurrentTime
     return $ M.map (go today) chains
   where 
     go today c@Chain{..} = do
         let days = fromIntegral $ diffDays (localDay today) 
                                            (localDay chainStart)
-        let p = chainProgress ++ take (days - length chainProgress) 
-                                      (repeat False)
-        (c { chainProgress = p}) 
+        let missed = take (days - length chainProgress) $ repeat False
+        let progress = chainProgress ++ missed
+        (c { chainProgress = progress }) 
 
 main :: IO ()
 main = do
