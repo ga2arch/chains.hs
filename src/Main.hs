@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, LambdaCase, TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards, LambdaCase #-}
 
 module Main where 
 
