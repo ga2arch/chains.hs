@@ -9,6 +9,7 @@ import Control.Monad.State
 import Data.Maybe
 import Data.List (intersperse, transpose)
 import Data.Time
+--import System.Console.ANSI
 import System.Directory
 import System.Locale
 import System.Environment
@@ -19,13 +20,12 @@ import qualified Data.Map as M
 type Chains = M.Map String Chain
 
 data Chain = Chain {
-    chainName  :: String
-,   chainStart :: LocalTime
-,   chainEnd   :: Maybe LocalTime
-,   chainRunning :: Bool
+    chainName     :: String
+,   chainStart    :: LocalTime
+,   chainEnd      :: Maybe LocalTime
+,   chainRunning  :: Bool
 ,   chainProgress :: [Bool]
 } deriving (Show, Read)
-
 
 process :: [String] -> StateT Chains IO ()
 process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
@@ -45,16 +45,17 @@ showChains :: StateT Chains IO ()
 showChains = do
     chains <- fmap M.elems get
     let r = transpose $ map showChain $ zip (iterate (+1) 0) chains
-    --liftIO $ print r
+    liftIO $ print r
     mapM_ (liftIO . putStrLn . concat) r
 
 showChain :: (Int, Chain) -> [String]
 showChain (i, Chain{..}) = 
-    [chainName ++ tab, start ++ tab, "---\t", progress]
+    [chainName ++ tab, show streak ++ tab, "---\t", progress]
   where
     tab = "\t"
     tabs = take i $ repeat '\t'
     start = formatTime defaultTimeLocale "%F" chainStart
+    streak = length $ takeWhile (== True) $ reverse chainProgress
     progress = concat $ 
                intersperse "\n" $ 
                map (\x -> if x 
@@ -88,8 +89,10 @@ updateChains chains = do
     return $ M.map (go today) chains
   where 
     go today c@Chain{..} = do
-        let days = diffDays (localDay today) (localDay chainStart)
-        let p = chainProgress ++ (take ((fromIntegral days) - length chainProgress) $ repeat False)
+        let days = fromIntegral $ diffDays (localDay today) 
+                                           (localDay chainStart)
+        let p = chainProgress ++ take (days - length chainProgress) 
+                                      (repeat False)
         (c { chainProgress = p}) 
 
 main :: IO ()
@@ -99,5 +102,3 @@ main = do
         Just chains -> updateChains chains >>= execStateT (process args) 
         Nothing     -> execStateT (process args) M.empty
     writeFile "chains" $ show chains
-
-
