@@ -9,16 +9,15 @@ import Prelude hiding (readFile)
 import Control.Applicative
 import Control.Monad.State
 import Data.Aeson
-import GHC.Generics
-import Data.Maybe
-import Data.List (intersperse, transpose)
 import Data.Time
+import Data.List (intersperse)
+import GHC.Generics
 import System.Directory
 import System.Locale
 import System.Environment
-import System.IO.Strict
 
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map as M
 
 newtype Chains = Chains { unMap :: M.Map String Chain }
@@ -26,20 +25,17 @@ newtype Chains = Chains { unMap :: M.Map String Chain }
 
 data Chain = Chain {
     chainName     :: String
-,   chainStart    :: LocalTime
-,   chainEnd      :: Maybe LocalTime
+,   chainStart    :: UTCTime
+,   chainEnd      :: Maybe UTCTime
 ,   chainRunning  :: Bool
 ,   chainProgress :: [Bool]
 } deriving (Show, Generic)
-
 
 instance FromJSON Chains
 instance ToJSON Chains 
 
 instance FromJSON Chain
 instance ToJSON Chain
-
-
 
 process :: [String] -> StateT Chains IO ()
 process [] = showChains
@@ -51,8 +47,7 @@ process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
 
 addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
-    time <- liftIO $ utcToLocalTime <$> getCurrentTimeZone 
-                                    <*> getCurrentTime
+    time <- liftIO getCurrentTime
     modify $ \chains -> do 
         let chain = Chain name time Nothing True []
         Chains $ M.insert name chain $ unMap chains
@@ -91,20 +86,20 @@ loadChains :: IO (Maybe Chains)
 loadChains = do 
     exists <- doesFileExist "chains"
     if exists
-        then fmap decode $ B.readFile "chains"
+        then fmap decodeStrict $ B.readFile "chains"
         else writeFile "chains" "" >> loadChains
-  --where
-    --maybeRead = fmap fst . listToMaybe . reads
 
 updateChains :: Chains -> IO Chains
 updateChains chains = do 
+    timezone <- getCurrentTimeZone
     today <- utcToLocalTime <$> getCurrentTimeZone 
                             <*> getCurrentTime
-    return $ Chains $ M.map (go today) $ unMap chains
+    return $ Chains $ M.map (go today timezone) $ unMap chains
   where 
-    go today c@Chain{..} = do
+    go today timezone c@Chain{..} = do
+        let start = utcToLocalTime timezone chainStart
         let days = fromIntegral $ diffDays (localDay today) 
-                                           (localDay chainStart)
+                                           (localDay start)
         let missed = take (days - length chainProgress) $ repeat False
         let progress = chainProgress ++ missed
         c { chainProgress = progress }
@@ -116,4 +111,4 @@ main = do
     chains  <- loadChains >>= \case
         Just chains -> updateChains chains >>= execStateT (process args) 
         Nothing     -> execStateT (process args) $ Chains M.empty
-    B.writeFile "chains" $ encode chains
+    BL.writeFile "chains" $ encode chains
