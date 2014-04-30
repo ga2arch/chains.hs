@@ -20,8 +20,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map as M
 
-newtype Chains = Chains { unMap :: M.Map String Chain }
-    deriving (Generic)
+type Chains = M.Map String Chain
 
 data Chain = Chain {
     chainName     :: String
@@ -30,9 +29,6 @@ data Chain = Chain {
 ,   chainRunning  :: Bool
 ,   chainProgress :: [Bool]
 } deriving (Show, Generic)
-
-instance FromJSON Chains
-instance ToJSON Chains 
 
 instance FromJSON Chain
 instance ToJSON Chain
@@ -44,17 +40,16 @@ process (cmd:args) |  cmd == "add"  = addChain args  >> showChains
                    |  cmd == "done" = doneChain args >> showChains
                    |  cmd == "rm"   = rmChain args   >> showChains
 
-
 addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
     time <- liftIO getCurrentTime
     modify $ \chains -> do 
         let chain = Chain name time Nothing True []
-        Chains $ M.insert name chain $ unMap chains
+        M.insert name chain chains
 
 showChains :: StateT Chains IO ()
 showChains = do
-    chains <- fmap (M.elems.unMap) get
+    chains <- fmap (M.elems) get
     --liftIO $ print r
     mapM_ (liftIO . putStrLn . showChain) chains
 
@@ -73,14 +68,14 @@ showChain Chain{..} =
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
     modify $ \chains -> do
-        let c@Chain{..} = (unMap chains) M.! name
-        Chains $ M.insert name 
-                          (c { chainProgress = chainProgress ++ [True]}) 
-                          $ unMap chains
+        let c@Chain{..} = chains M.! name
+        M.insert name 
+                 (c { chainProgress = chainProgress ++ [True]}) 
+                 chains
 
 rmChain :: [String] -> StateT Chains IO ()
 rmChain (name:_) = do
-    modify $ \chains -> Chains $ M.delete name $ unMap chains 
+    modify $ \chains -> M.delete name chains 
 
 loadChains :: IO (Maybe Chains)
 loadChains = do 
@@ -94,7 +89,7 @@ updateChains chains = do
     timezone <- getCurrentTimeZone
     today <- utcToLocalTime <$> getCurrentTimeZone 
                             <*> getCurrentTime
-    return $ Chains $ M.map (go today timezone) $ unMap chains
+    return $ M.map (go today timezone) chains
   where 
     go today timezone c@Chain{..} = do
         let start = utcToLocalTime timezone chainStart
@@ -110,5 +105,5 @@ main = do
     putStrLn "Chains\n==="
     chains  <- loadChains >>= \case
         Just chains -> updateChains chains >>= execStateT (process args) 
-        Nothing     -> execStateT (process args) $ Chains M.empty
+        Nothing     -> execStateT (process args) M.empty
     BL.writeFile "chains" $ encode chains
