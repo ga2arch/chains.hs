@@ -1,4 +1,6 @@
-{-# LANGUAGE RecordWildCards, LambdaCase #-}
+{-# LANGUAGE RecordWildCards, LambdaCase, 
+             OverloadedStrings, DeriveDataTypeable,
+             DeriveGeneric #-}
 
 module Main where 
 
@@ -6,18 +8,21 @@ import Prelude hiding (readFile)
 
 import Control.Applicative
 import Control.Monad.State
+import Data.Aeson
+import GHC.Generics
 import Data.Maybe
 import Data.List (intersperse, transpose)
 import Data.Time
---import System.Console.ANSI
 import System.Directory
 import System.Locale
 import System.Environment
 import System.IO.Strict
 
+import qualified Data.ByteString.Lazy as B
 import qualified Data.Map as M
 
-type Chains = M.Map String Chain
+newtype Chains = Chains { unMap :: M.Map String Chain }
+    deriving (Generic)
 
 data Chain = Chain {
     chainName     :: String
@@ -25,7 +30,16 @@ data Chain = Chain {
 ,   chainEnd      :: Maybe LocalTime
 ,   chainRunning  :: Bool
 ,   chainProgress :: [Bool]
-} deriving (Show, Read)
+} deriving (Show, Generic)
+
+
+instance FromJSON Chains
+instance ToJSON Chains 
+
+instance FromJSON Chain
+instance ToJSON Chain
+
+
 
 process :: [String] -> StateT Chains IO ()
 process [] = showChains
@@ -41,11 +55,11 @@ addChain (name:_) = do
                                     <*> getCurrentTime
     modify $ \chains -> do 
         let chain = Chain name time Nothing True []
-        M.insert name chain chains
+        Chains $ M.insert name chain $ unMap chains
 
 showChains :: StateT Chains IO ()
 showChains = do
-    chains <- fmap M.elems get
+    chains <- fmap (M.elems.unMap) get
     --liftIO $ print r
     mapM_ (liftIO . putStrLn . showChain) chains
 
@@ -64,34 +78,36 @@ showChain Chain{..} =
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
     modify $ \chains -> do
-        let c@Chain{..} = chains M.! name
-        M.insert name (c { chainProgress = chainProgress ++ [True]}) chains
+        let c@Chain{..} = (unMap chains) M.! name
+        Chains $ M.insert name 
+                          (c { chainProgress = chainProgress ++ [True]}) 
+                          $ unMap chains
 
 rmChain :: [String] -> StateT Chains IO ()
 rmChain (name:_) = do
-    modify $ \chains -> M.delete name chains 
+    modify $ \chains -> Chains $ M.delete name $ unMap chains 
 
 loadChains :: IO (Maybe Chains)
 loadChains = do 
     exists <- doesFileExist "chains"
     if exists
-        then fmap maybeRead $ readFile "chains"
+        then fmap decode $ B.readFile "chains"
         else writeFile "chains" "" >> loadChains
-  where
-    maybeRead = fmap fst . listToMaybe . reads
+  --where
+    --maybeRead = fmap fst . listToMaybe . reads
 
 updateChains :: Chains -> IO Chains
 updateChains chains = do 
     today <- utcToLocalTime <$> getCurrentTimeZone 
                             <*> getCurrentTime
-    return $ M.map (go today) chains
+    return $ Chains $ M.map (go today) $ unMap chains
   where 
     go today c@Chain{..} = do
         let days = fromIntegral $ diffDays (localDay today) 
                                            (localDay chainStart)
         let missed = take (days - length chainProgress) $ repeat False
         let progress = chainProgress ++ missed
-        (c { chainProgress = progress }) 
+        c { chainProgress = progress }
 
 main :: IO ()
 main = do
@@ -99,5 +115,5 @@ main = do
     putStrLn "Chains\n==="
     chains  <- loadChains >>= \case
         Just chains -> updateChains chains >>= execStateT (process args) 
-        Nothing     -> execStateT (process args) M.empty
-    writeFile "chains" $ show chains
+        Nothing     -> execStateT (process args) $ Chains M.empty
+    B.writeFile "chains" $ encode chains
