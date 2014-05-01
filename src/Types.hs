@@ -18,13 +18,19 @@ data Chain = Chain {
 ,   chainProgress :: [Bool]
 } deriving (Show)
 
+parseProgress :: [(Int, Bool)] -> [Bool]
+parseProgress = map snd
+
+encodeProgress :: [Bool] -> [(Int, Bool)]
+encodeProgress progress = zip (iterate succ 0) progress 
+
 instance FromJSON Chain where
     parseJSON (Object v) = Chain <$>
-                           v .: "name"
-                           <*> v .: "start"
-                           <*> v .: "end"
-                           <*> v .: "running"
-                           <*> v .: "progress"
+                           v .: "name"     <*>
+                           v .: "start"    <*>
+                           v .: "end"      <*>
+                           v .: "running"  <*>
+                           fmap parseProgress (v .: "progress")
 
 instance ToJSON Chain where
     toJSON Chain{..} = object [
@@ -32,5 +38,5 @@ instance ToJSON Chain where
                         ,   "start"    .= chainStart
                         ,   "end"      .= chainEnd
                         ,   "running"  .= chainRunning
-                        ,   "progress" .= chainProgress
+                        ,   "progress" .= (encodeProgress chainProgress)
                        ]

@@ -7,12 +7,16 @@ chainsApp.controller('chainsCtrl', function($scope, $http) {
     })
 
     $scope.doneChain = function(name) {
-        $scope.chains[name.toLowerCase()].progress.push(true)
-        //console.log($scope.chains)
+        console.log($scope.chains.devel.progress)
+
+        i = $scope.chains[name.toLowerCase()].progress.length
+        $scope.chains[name.toLowerCase()].progress.push([i, true])
+        
     }
 
-    $scope.undoChain = function (name, index) {
-        $scope.chains[name.toLowerCase()].progress[index] = false
+    $scope.changeChain = function (name, index) {
+        old = $scope.chains[name.toLowerCase()].progress[index]
+        $scope.chains[name.toLowerCase()].progress[index] = [old[0], !old[1]]
         console.log($scope.chains)
     }
 })

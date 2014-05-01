@@ -22,7 +22,7 @@ web = do
             file $ root ++ "index.html"
 
         get "/chains.json" $ do
-            json chains
+            file "chains"
 
         get (regex "^/static/(.*)$") $ do
             path <- param "1"
