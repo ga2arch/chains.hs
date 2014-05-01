@@ -9,6 +9,7 @@ import Web.Scotty
 import Types
 import Utils
 
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy as TL
 
 root = "/Users/ga2arch/Progetti/haskell/hs-chainhabit/src/Interfaces/Web/"
@@ -20,6 +21,10 @@ web = do
     scotty 3000 $ do
         get "/" $ do
             file $ root ++ "index.html"
+
+        post "/save" $ do
+            chains <- jsonData
+            liftIO $ BL.writeFile "chains" $ encode (chains :: Chains)
 
         get "/chains.json" $ do
             file "chains"

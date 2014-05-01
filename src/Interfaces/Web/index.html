@@ -4,10 +4,16 @@
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.js"></script>
     <script type="text/javascript" src="static/js/controller.js">
     </script>
+    <style type="text/css">
+        ul > li
+        {
+        display: inline;
+        }
+    </style>
     <title>Ciao</title>
 </head>
 <body ng-controller="chainsCtrl">
-    <ul>
+    <ul id="navlist">
     <li ng-repeat="chain in chains">
         {{chain.name}}
         <ul>
