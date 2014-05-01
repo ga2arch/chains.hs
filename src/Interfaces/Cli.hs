@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards, LambdaCase, 
              OverloadedStrings #-}
 
-module Cli.Cli where 
+module Interfaces.Cli where 
 
 import Prelude hiding (readFile)
 
@@ -19,9 +19,8 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map as M
 
+import Utils
 import Types
-
-lower = map toLower
 
 process :: [String] -> StateT Chains IO ()
 process [] = showChains
@@ -66,32 +65,10 @@ rmChain :: [String] -> StateT Chains IO ()
 rmChain (name:_) = do
     modify $ \chains -> M.delete (lower name) chains 
 
-loadChains :: IO (Maybe Chains)
-loadChains = do 
-    exists <- doesFileExist "chains"
-    if exists
-        then fmap decodeStrict $ B.readFile "chains"
-        else writeFile "chains" "" >> loadChains
-
-updateChains :: Chains -> IO Chains
-updateChains chains = do 
-    timezone <- getCurrentTimeZone
-    today <- utcToLocalTime <$> getCurrentTimeZone 
-                            <*> getCurrentTime
-    return $ M.map (go today timezone) chains
-  where 
-    go today timezone c@Chain{..} = do
-        let start = utcToLocalTime timezone chainStart
-        let days = fromIntegral $ diffDays (localDay today) 
-                                           (localDay start)
-        let missed = take (days - length chainProgress) $ repeat False
-        let progress = chainProgress ++ missed
-        c { chainProgress = progress }
-
 cli :: [String] -> IO ()
 cli args = do
     putStrLn "Chains\n==="
-    chains  <- loadChains >>= \case
-        Just chains -> updateChains chains >>= execStateT (process args) 
-        Nothing     -> execStateT (process args) M.empty
+    chains  <-  loadChains 
+            >>= updateChains 
+            >>= execStateT (process args)
     BL.writeFile "chains" $ encode chains
