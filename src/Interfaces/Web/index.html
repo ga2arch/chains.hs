@@ -11,15 +11,17 @@
     <li ng-repeat="chain in chains">
         {{chain.name}}
         <ul>
-            <li ng-repeat="d in chain.progress">
+            <li ng-repeat="d in chain.progress track by $index">
                 <input type="checkbox" 
                        ng-checked={{d}} 
-                       onclick="return false">
+                       onclick="return false"
+                       ng-click="undoChain(chain.name, $index)">
             </li>
             <li>
-                <input type="checkbox" 
-                       ng-checked="false"
-                       >
+                <input id="doneCheckbox"
+                       type="checkbox" 
+                       onclick="return false"
+                       ng-click="doneChain(chain.name)">
             </li>
         </ul>
 
