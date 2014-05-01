@@ -20,33 +20,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map as M
 
-type Chains = M.Map String Chain
-
-data Chain = Chain {
-    chainName     :: String
-,   chainStart    :: UTCTime
-,   chainEnd      :: Maybe UTCTime
-,   chainRunning  :: Bool
-,   chainProgress :: [Bool]
-} deriving (Show)
-
-instance FromJSON Chain where
-    parseJSON (Object v) = Chain <$>
-                           v .: "name"
-                           <*> v .: "start"
-                           <*> v .: "end"
-                           <*> v .: "running"
-                           <*> v .: "progress"
-
-instance ToJSON Chain where
-    toJSON Chain{..} = object [
-                            "name"     .= chainName
-                        ,   "start"    .= chainStart
-                        ,   "end"      .= chainEnd
-                        ,   "running"  .= chainRunning
-                        ,   "progress" .= chainProgress
-                       ]
-
+import Types
 
 lower = map toLower
 
@@ -67,17 +41,16 @@ addChain (name:_) = do
 showChains :: StateT Chains IO ()
 showChains = do
     chains <- fmap (M.elems) get
-    --liftIO $ print r
     mapM_ (liftIO . putStrLn . showChain) chains
 
 showChain :: Chain -> String
 showChain Chain{..} = 
     (concat $ intersperse "\n" temp) ++ "\n"
   where
-    separator = "---" --take (length chainName) $ repeat '-'
+    separator = "---"
     start = formatTime defaultTimeLocale "%F" chainStart
     streak = length $ takeWhile (== True) $ reverse chainProgress
-    spaces = " " --take (length separator `div` 2) $ repeat ' '
+    spaces = " "
     progress = map (\case True -> spaces ++ "V" 
                           False -> spaces ++ "X") chainProgress
     temp = [chainName, show streak, separator] ++ progress
