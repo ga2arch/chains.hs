@@ -9,9 +9,9 @@ import Prelude hiding (readFile)
 import Control.Applicative
 import Control.Monad.State
 import Data.Aeson
+import Data.Char
 import Data.Time
 import Data.List (intersperse)
-import GHC.Generics
 import System.Directory
 import System.Locale
 import System.Environment
@@ -28,10 +28,27 @@ data Chain = Chain {
 ,   chainEnd      :: Maybe UTCTime
 ,   chainRunning  :: Bool
 ,   chainProgress :: [Bool]
-} deriving (Show, Generic)
+} deriving (Show)
 
-instance FromJSON Chain
-instance ToJSON Chain
+instance FromJSON Chain where
+    parseJSON (Object v) = Chain <$>
+                           v .: "name"
+                           <*> v .: "start"
+                           <*> v .: "end"
+                           <*> v .: "running"
+                           <*> v .: "progress"
+
+instance ToJSON Chain where
+    toJSON Chain{..} = object [
+                            "name"     .= chainName
+                        ,   "start"    .= chainStart
+                        ,   "end"      .= chainEnd
+                        ,   "running"  .= chainRunning
+                        ,   "progress" .= chainProgress
+                       ]
+
+
+lower = map toLower
 
 process :: [String] -> StateT Chains IO ()
 process [] = showChains
@@ -45,7 +62,7 @@ addChain (name:_) = do
     time <- liftIO getCurrentTime
     modify $ \chains -> do 
         let chain = Chain name time Nothing True []
-        M.insert name chain chains
+        M.insert (lower name) chain chains    
 
 showChains :: StateT Chains IO ()
 showChains = do
@@ -68,14 +85,14 @@ showChain Chain{..} =
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
     modify $ \chains -> do
-        let c@Chain{..} = chains M.! name
-        M.insert name 
+        let c@Chain{..} = chains M.! (lower name)
+        M.insert (lower name) 
                  (c { chainProgress = chainProgress ++ [True]}) 
                  chains
 
 rmChain :: [String] -> StateT Chains IO ()
 rmChain (name:_) = do
-    modify $ \chains -> M.delete name chains 
+    modify $ \chains -> M.delete (lower name) chains 
 
 loadChains :: IO (Maybe Chains)
 loadChains = do 
