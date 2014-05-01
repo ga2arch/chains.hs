@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html ng-app="chainsApp">
+<head>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.js"></script>
+    <script type="text/javascript" src="static/js/controller.js">
+    </script>
+    <title>Ciao</title>
+</head>
+<body ng-controller="chainsCtrl">
+    <ul>
+    <li ng-repeat="chain in chains">
+        {{chain.name}}
+        <ul>
+            <li ng-repeat="d in chain.progress">
+                <input type="checkbox" 
+                       ng-checked={{d}} 
+                       onclick="return false">
+            </li>
+            <li>
+                <input type="checkbox" 
+                       ng-checked="false"
+                       >
+            </li>
+        </ul>
+
+    </li>
+    </ul>
+</body>
+</html>
