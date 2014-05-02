@@ -5,17 +5,12 @@ module Interfaces.Cli where
 
 import Prelude hiding (readFile)
 
-import Control.Applicative
 import Control.Monad.State
 import Data.Aeson
-import Data.Char
 import Data.Time
 import Data.List (intersperse)
-import System.Directory
 import System.Locale
-import System.Environment
 
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map as M
 

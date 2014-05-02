@@ -7,17 +7,13 @@ import Data.Aeson hiding (json)
 import Web.Scotty
 
 import Types
-import Utils
 
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.Text.Lazy as TL
 
 root = "src/Interfaces/Web/"
 
 web :: IO ()
 web = do
-    chains <- loadChains >>= updateChains
-
     scotty 3000 $ do
         get "/" $ do
             file $ root ++ "index.html"

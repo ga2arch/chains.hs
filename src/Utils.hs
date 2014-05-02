@@ -9,11 +9,11 @@ import Data.Time
 import System.Directory
 
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map as M
 
 import Types
 
+lower :: String -> String
 lower = map toLower
 
 loadChains :: IO (Maybe Chains)
