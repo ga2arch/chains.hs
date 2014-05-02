@@ -12,16 +12,16 @@ chainsApp.controller('chainsCtrl', function($scope, $http) {
         })
     }
 
-    $scope.addChain = function (rawname) {
-        name = rawname.toLowerCase()
-        $scope.chains[name] = {}
-        $scope.chains[name].name = rawname
-        $scope.chains[name].progress = []
-        $scope.chains[name].streak = 0
-        $scope.chains[name].running = true
-        $scope.chains[name].start = new Date().getTime().toString()
-        $scope.chains[name].end = null
-        //$scope.chains[name].start = 
+    $scope.addChain = function (name) {
+        chain = $scope.chains[name.toLowerCase()] = {}
+
+        chain.name = name
+        chain.progress = []
+        chain.streak = 0
+        chain.running = true
+        chain.start = new Date().getTime().toString()
+        chain.end = null
+        
         $scope.saveData()
 
         console.log($scope.chains)

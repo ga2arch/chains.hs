@@ -45,20 +45,21 @@ showChain :: Chain -> String
 showChain Chain{..} = 
     (concat $ intersperse "\n" temp) ++ "\n"
   where
-    separator = "---"
+    header = chainName ++ " - " ++ show streak
+    separator = take (length header) $ repeat '-'
     start = formatTime defaultTimeLocale "%F" chainStart
     streak = length $ takeWhile (== True) $ reverse chainProgress
-    spaces = " "
-    progress = map (\case True -> spaces ++ "V" 
-                          False -> spaces ++ "X") chainProgress
-    temp = [chainName, show streak, separator] ++ progress
+    progress = concatMap (\case True -> "V " 
+                                False -> "X ") chainProgress
+    temp = [header, separator] ++ [progress]
 
 doneChain :: [String] -> StateT Chains IO ()
 doneChain (name:_) = do
     modify $ \chains -> do
         let c@Chain{..} = chains M.! (lower name)
         M.insert (lower name) 
-                 (c { chainProgress = chainProgress ++ [True]}) 
+                 (c { chainProgress = chainProgress ++ [True]
+                    , chainStreak = succ chainStreak }) 
                  chains
 
 rmChain :: [String] -> StateT Chains IO ()
