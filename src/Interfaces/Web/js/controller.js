@@ -28,30 +28,32 @@ chainsApp.controller('chainsCtrl', function($scope, $http) {
     }
 
     $scope.doneChain = function(name) {
-        i = $scope.chains[name.toLowerCase()].progress.length
-        $scope.chains[name.toLowerCase()].progress.push([i, true])
-        $scope.chains[name.toLowerCase()].streak += 1
+        chain = $scope.chains[name.toLowerCase()]
+        i = chain.progress.length
+        chain.progress.push([i, true])
+        chain.streak += 1
+
         $scope.saveData()
     }
 
     $scope.changeChain = function (name, index) {
-        old = $scope.chains[name.toLowerCase()].progress[index]
-        $scope.chains[name.toLowerCase()].progress[index] = [old[0], !old[1]]
+        chain = $scope.chains[name.toLowerCase()]
+        old = chain.progress[index]
+        chain.progress[index] = [old[0], !old[1]]
         
         streak = 0
-        progress = $scope.chains[name.toLowerCase()].progress
-        progress.reverse()
+        chain.progress.reverse()
 
-        for (i=0; i < progress.length; i++) {
-            if (progress[i][1])
+        for (i=0; i < chain.progress.length; i++) {
+            if (chain.progress[i][1])
                 streak += 1
             else
                 break
         }
 
-        progress.reverse()
+        chain.progress.reverse()
 
-        $scope.chains[name.toLowerCase()].streak = streak
+        chain.streak = streak
         $scope.saveData()
     }
 
