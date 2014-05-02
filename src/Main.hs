@@ -9,6 +9,5 @@ main :: IO ()
 main = do
     (arg:args) <- getArgs 
     case arg of 
-      "-c" -> cli args
-      "-w" -> web
-      _     -> putStrLn "Error"
+      "web" -> web
+      _     -> cli $ arg:args
