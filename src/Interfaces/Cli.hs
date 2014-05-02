@@ -33,7 +33,7 @@ addChain :: [String] -> StateT Chains IO ()
 addChain (name:_) = do
     time <- liftIO getCurrentTime
     modify $ \chains -> do 
-        let chain = Chain name time Nothing True []
+        let chain = Chain name time Nothing True [] 0
         M.insert (lower name) chain chains    
 
 showChains :: StateT Chains IO ()

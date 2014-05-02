@@ -10,16 +10,18 @@
         display: inline;
         }
     </style>
-    <title>Ciao</title>
+    <title>Chains</title>
 </head>
 <body ng-controller="chainsCtrl">
     <ul id="navlist">
     <li ng-repeat="chain in chains">
         {{chain.name}}
+        -
+        {{chain.streak}}
         <ul>
             <li ng-repeat="d in chain.progress track by d[0]">
                 <input type="checkbox" 
-                       ng-checked={{d[1]}} 
+                       ng-checked={{d[1]}}
                        ng-click="changeChain(chain.name, d[0])">
             </li>
             <li>

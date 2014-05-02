@@ -16,6 +16,7 @@ data Chain = Chain {
 ,   chainEnd      :: Maybe UTCTime
 ,   chainRunning  :: Bool
 ,   chainProgress :: [Bool]
+,   chainStreak   :: Int
 } deriving (Show)
 
 parseProgress :: [(Int, Bool)] -> [Bool]
@@ -30,7 +31,8 @@ instance FromJSON Chain where
                            v .: "start"    <*>
                            v .: "end"      <*>
                            v .: "running"  <*>
-                           fmap parseProgress (v .: "progress")
+                           fmap parseProgress (v .: "progress") <*>
+                           v .: "streak"
 
 instance ToJSON Chain where
     toJSON Chain{..} = object [
@@ -39,4 +41,5 @@ instance ToJSON Chain where
                         ,   "end"      .= chainEnd
                         ,   "running"  .= chainRunning
                         ,   "progress" .= (encodeProgress chainProgress)
+                        ,   "streak"   .= chainStreak
                        ]
