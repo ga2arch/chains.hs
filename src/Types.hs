@@ -27,10 +27,10 @@ encodeProgress :: [Bool] -> [(Int, Bool)]
 encodeProgress progress = zip (iterate succ 0) progress
 
 parseTime :: String -> UTCTime
-parseTime time = readTime defaultTimeLocale "%s" time 
+parseTime time = readTime defaultTimeLocale "%s%Q" time 
 
 encodeTime :: UTCTime -> String
-encodeTime = formatTime defaultTimeLocale "%s"
+encodeTime = formatTime defaultTimeLocale "%s%Q"
 
 instance FromJSON Chain where
     parseJSON (Object v) = Chain <$>

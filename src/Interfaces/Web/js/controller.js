@@ -19,6 +19,7 @@ chainsApp.controller('chainsCtrl', function($scope, $http) {
         $scope.chains[name].progress = []
         $scope.chains[name].streak = 0
         $scope.chains[name].running = true
+        $scope.chains[name].start = new Date().getTime().toString()
         $scope.chains[name].end = null
         //$scope.chains[name].start = 
         $scope.saveData()
