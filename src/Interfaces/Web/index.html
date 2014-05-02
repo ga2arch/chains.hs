@@ -13,6 +13,9 @@
     <title>Chains</title>
 </head>
 <body ng-controller="chainsCtrl">
+    <input type="text" ng-model="chainName">
+    <button ng-click="addChain(chainName)">Add</button>
+
     <ul id="navlist">
     <li ng-repeat="chain in chains">
         {{chain.name}}
@@ -31,7 +34,6 @@
                        ng-click="doneChain(chain.name)">
             </li>
         </ul>
-
     </li>
     </ul>
 </body>

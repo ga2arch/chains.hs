@@ -4,7 +4,8 @@ module Types where
 
 import Control.Applicative
 import Data.Aeson
-import Data.Time
+import Data.Time hiding (parseTime)
+import System.Locale
 
 import qualified Data.Map as M
 
@@ -23,12 +24,18 @@ parseProgress :: [(Int, Bool)] -> [Bool]
 parseProgress = map snd
 
 encodeProgress :: [Bool] -> [(Int, Bool)]
-encodeProgress progress = zip (iterate succ 0) progress 
+encodeProgress progress = zip (iterate succ 0) progress
+
+parseTime :: String -> UTCTime
+parseTime time = readTime defaultTimeLocale "%s" time 
+
+encodeTime :: UTCTime -> String
+encodeTime = formatTime defaultTimeLocale "%s"
 
 instance FromJSON Chain where
     parseJSON (Object v) = Chain <$>
                            v .: "name"     <*>
-                           v .: "start"    <*>
+                           fmap parseTime (v .: "start") <*>
                            v .: "end"      <*>
                            v .: "running"  <*>
                            fmap parseProgress (v .: "progress") <*>
@@ -37,9 +44,9 @@ instance FromJSON Chain where
 instance ToJSON Chain where
     toJSON Chain{..} = object [
                             "name"     .= chainName
-                        ,   "start"    .= chainStart
+                        ,   "start"    .= encodeTime chainStart
                         ,   "end"      .= chainEnd
                         ,   "running"  .= chainRunning
-                        ,   "progress" .= (encodeProgress chainProgress)
+                        ,   "progress" .= encodeProgress chainProgress
                         ,   "streak"   .= chainStreak
                        ]
