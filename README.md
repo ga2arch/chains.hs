@@ -10,6 +10,8 @@ cabal install --only-dependencies
 
 # Run 
 
+## Cli
+
 cabal run (add | rm | done | show)
 
 ```
@@ -19,22 +21,30 @@ done <name>
 show 
 ```
 
-# Example
+## Web
+
+cabal run web
+
+# Example - Cli 
 
 cabal run add Study
 
 ```
-Study
-1
----
+Study - 0 
+---------
 ```
 
 cabal run done Study
 
 ```
-Study
-1
----
- V
- ```
+Study - 1
+---------
+V
+```
+cabal run done Study
 
+```
+Study - 2
+---------
+V V
+```
