@@ -12,7 +12,7 @@ import Utils
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text.Lazy as TL
 
-root = "/Users/ga2arch/Progetti/haskell/hs-chainhabit/src/Interfaces/Web/"
+root = "src/Interfaces/Web/"
 
 web :: IO ()
 web = do
