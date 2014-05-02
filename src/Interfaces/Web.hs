@@ -17,7 +17,7 @@ web :: IO ()
 web = do
     loadChains >>= 
         updateChains >>= 
-            BL.writeFile "chains" . encode
+            BL.writeFile "chains.db" . encode
 
     scotty 3000 $ do
         get "/" $ do
@@ -25,10 +25,10 @@ web = do
 
         post "/save" $ do
             chains <- jsonData
-            liftIO $ BL.writeFile "chains" $ encode (chains :: Chains)
+            liftIO $ BL.writeFile "chains.db" $ encode (chains :: Chains)
 
         get "/chains.json" $ do
-            file "chains"
+            file "chains.db"
 
         get (regex "^/static/(.*)$") $ do
             path <- param "1"

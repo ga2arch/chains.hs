@@ -67,4 +67,4 @@ cli args = do
     chains  <-  loadChains 
             >>= updateChains 
             >>= execStateT (process args)
-    BL.writeFile "chains" $ encode chains
+    BL.writeFile "chains.db" $ encode chains

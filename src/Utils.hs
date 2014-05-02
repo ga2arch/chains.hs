@@ -18,10 +18,10 @@ lower = map toLower
 
 loadChains :: IO (Maybe Chains)
 loadChains = do 
-    exists <- doesFileExist "chains"
+    exists <- doesFileExist "chains.db"
     if exists
-        then fmap decodeStrict $ B.readFile "chains"
-        else writeFile "chains" "" >> loadChains
+        then fmap decodeStrict $ B.readFile "chains.db"
+        else writeFile "chains.db" "" >> loadChains
 
 updateChains :: Maybe Chains -> IO Chains
 updateChains Nothing       = return $ M.empty

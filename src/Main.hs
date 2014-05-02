@@ -7,7 +7,9 @@ import Interfaces.Web
 
 main :: IO ()
 main = do
-    (arg:args) <- getArgs 
-    case arg of 
-      "web" -> web
-      _     -> cli $ arg:args
+    x <- getArgs
+    if length x == 0
+        then cli x
+        else case x of 
+                ("web":_) -> web
+                _         -> cli x
