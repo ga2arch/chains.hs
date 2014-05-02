@@ -1,4 +1,4 @@
-hs-chains
+chains.hs
 =========
 
 Don't break the chain made in haskell 
