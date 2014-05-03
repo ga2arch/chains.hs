@@ -63,7 +63,7 @@ rmChain (name:_) = do
 
 cli :: [String] -> IO ()
 cli args = do
-    putStrLn "Chains\n==="
+    putStrLn "Chains\n=====\n"
     chains  <-  loadChains 
             >>= updateChains 
             >>= execStateT (process args)
